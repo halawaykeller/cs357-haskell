@@ -1,21 +1,21 @@
-module Homework3
-( Tree(LeafT, NodeT),
-  splitList, 
-  balance, 
-  factors, 
-  prime, 
-  primes, 
-  goldbach, 
-  church,  
-  powerset, 
-  example, 
-  makeCommand,
-  T(Leaf, Node),
-  P(GoLeft, GoRight, This),
-  allpaths,
-  eval,
-  satisfiable,
-) where
+-- module Homework3
+-- ( Tree(LeafT, NodeT),
+--   splitList, 
+--   balance, 
+--   factors, 
+--   prime, 
+--   primes, 
+--   goldbach, 
+--   church,  
+--   powerset, 
+--   example, 
+--   makeCommand,
+--   T(Leaf, Node),
+--   P(GoLeft, GoRight, This),
+--   allpaths,
+--   eval,
+--   satisfiable,
+-- ) where
 
 --No Other Imports Are Allowed
 import Data.List
@@ -69,14 +69,22 @@ example :: [[(Double, Double)]]
 example = [[(100.0,100.0),(100.0,200.0),(200.0,100.0)],
   [(150.0,150.0),(150.0,200.0),(200.0,200.0),(200.0,150.0)]]
 
--- getBoundingBox :: [[(Double, Double)]] -> String
--- getBoundingBox 
+boundingBox :: [[(Double, Double)]] -> ([Double], [Double])
+boundingBox [] = ([], [])
+boundingBox (x:xs) = (map fst x ++ fst f, map snd x ++ snd f) 
+                        where f = boundingBox xs
+
+makeBounding :: ([Double], [Double]) -> String
+makeBounding (x, y) = showMin x ++ " " ++ showMin y ++ " " ++ showMax x ++ " "++ showMax y
+                        where showMin = show . minimum
+                              showMax = show . maximum
+
 
 moveTo :: (Double, Double) -> String
-moveTo (x, y) = show x ++ show y ++ " moveto \n"
+moveTo (x, y) = show x ++ " " ++ show y ++ " moveto \n"
 
 lineTo :: (Double, Double) -> String
-lineTo (x, y) = show x ++ show y ++ " lineto \n"
+lineTo (x, y) = show x ++ " " ++ show y ++ " lineto \n"
 
 polygons :: [[(Double, Double)]] -> String
 polygons [] = ""
@@ -84,8 +92,9 @@ polygons (x:xss) = (moveTo (head x) ++ concatMap lineTo (tail x)) ++ endPoly ++ 
                     where endPoly = "closepath\nstroke\n"
 
 makeCommand :: [[(Double, Double)]] -> String
-makeCommand xss = start ++ (polygons xss) ++ end
+makeCommand xss = start ++ box ++ (polygons xss) ++ end
                         where 
+                            box = "%%BoundingBox: " ++ (makeBounding . boundingBox) xss ++ "\n"
                             start = "%!PS-Adobe-3.0 EPSF-3.0 \n"
                             end = "showpage\n%%EOF"
 
