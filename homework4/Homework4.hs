@@ -53,8 +53,6 @@ fileisort fn1 fn2 = do
 
 data Field = B | R | G deriving (Eq, Ord, Show)
 
---data Field = R | B | G deriving (Eq, Ord, Show)
-
 type Board = [Field]
 
 data Tree a = Node a [Tree a] deriving (Show)
@@ -142,16 +140,25 @@ minimax (Node g xs)
                         xs' = map minimax xs
                         ps = [p | Node (_,p) _ <- xs']            
                     
+-- bestmove :: Board -> Field -> Board
+-- bestmove g p = if board == [] then g else head board
+--                     where 
+--                         tree = prune depth (gametree g p)
+--                         Node (_, best) ts = minimax tree
+--                         board = [g' | Node (g', p') _ <- ts, p' == best]
+
 bestmove :: Board -> Field -> Board
-bestmove g p = head [g' | Node (g', p') _ <- ts, p' == best]
+bestmove g p = head board
                     where 
                         tree = prune depth (gametree g p)
                         Node (_, best) ts = minimax tree
+                        board = [g' | Node (g', p') _ <- ts, p' == best]                        
 
 bestStrategy :: Board -> Field -> Int
 bestStrategy g p = head [m | m <- [0..((size^2)-1)], (g !! m) /= (b !! m)]
                     where 
                         b = bestmove g p
+
 
 strategyForRed :: Board -> Int
 strategyForRed g =  bestStrategy g R
@@ -159,11 +166,83 @@ strategyForRed g =  bestStrategy g R
 strategyForGreen :: Board -> Int
 strategyForGreen g = bestStrategy g G
 
-playGame :: Board -> Field -> Board
-playGame g p
-        | full g = g
-        | otherwise = playGame (bestmove g p) (next p)
 
+-- Start by taking an empty board
+-- Make the best move for Red and return the board
+-- Make the next valid move for Green and return the board
+
+-- validNextMove :: Board -> Field -> Board
+-- validNextMove (g:gs) p
+--             | valid (g:gs) i = g:move (g:gs) i p
+--             | otherwise = validNextMove gs p
+--                 where i = 2 --((size^2)-1) - (length (g:gs))
+
+
+validNextMove :: Board -> Field-> Board
+validNextMove gs p = head [move gs i p | i <- [0..((size^2)-1)], valid gs i]
+
+validNextMoves :: Board -> Field-> [Board]
+validNextMoves gs p = [move gs i p | i <- [0..((size^2)-1)], valid gs i]
+
+
+-- validNextMove :: Board -> Field-> Board
+-- validNextMove gs p = if validB == [] then gs else validB
+--                         where validB = head [move gs i p | i <- [0..((size^2)-1)], valid gs i]
+                
+
+-- WORKING
+-- testStrategyForRed :: Board -> Field -> Bool
+-- testStrategyForRed g p
+--                 | wins G g = False
+--                 | wins R g || full g = True
+--                 | otherwise = testStrategyForRed g' p
+--                         where g' = validNextMove (bestmove g R) G
+
+
+-- Get all the valid next moves
+-- Test strategy for red on each valid next move
+-- recurse
+
+
+-- Pass an empty board
+-- Make the best move for Red
+-- Get a list of all the boards with valid next moves for green
+-- Map TestStrategy onto all the possible valid boards
+-- Make the best move for red based on that board
+
+-- testStrategyForRed :: [Board] -> Field -> Bool
+-- testStrategyForRed gs p
+--                 | and (map (wins G) gs) = False
+--                 | and (map (wins R) gs) || and (map full gs) = True
+--                 | otherwise = and [testStrategyForRed x p | x <- gs']
+--                         where gs' = map (flip validNextMoves G) ms
+--                               ms = map (flip bestmove R) gs
+
+-- testStrategyForRed :: [Board] -> Field -> [Board]
+-- testStrategyForRed gs p
+--                 | and (map (wins G) gs) = gs
+--                 | and (map (wins R) gs) || and (map full gs) = gs
+--                 | otherwise = concat [testStrategyForRed x p | x <- gs']
+--                         where gs' = map (flip validNextMoves G) ms
+--                               ms = map (flip bestmove R) gs                              
+
+
+testStrategyForRed :: Board -> Field -> Board
+testStrategyForRed g p
+                | wins G g = g
+                | wins R g || full g = g
+                | otherwise = testStrategyForRed g' p
+                        where g' = validNextMove (bestmove g R) G
+
+
+getLabels :: Tree (Board, Field)  -> [Field]
+getLabels (Node (g, p) []) = if (p == R) then [] else [p]
+getLabels (Node _ xs) = concat (map getLabels xs)
+
+playgame :: Board -> Field -> Board
+playgame g p
+        | full g = g
+        | otherwise = playgame (bestmove g p) (next p)
 
 
 --4.4 (Optional) Drawing Game Trees and Strategies (30pts EC)
