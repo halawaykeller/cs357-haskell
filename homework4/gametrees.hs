@@ -3,6 +3,9 @@
 
 -- Basic declarations
 
+-- R = O
+-- G = X
+
 import Data.Char
 import Data.List
 import System.IO
@@ -10,133 +13,134 @@ import System.IO
 size :: Int
 size = 3
 
-type Grid = [[Player]]
+type Board = [Field]
 
-data Player = O | B | X
+data Field = R | B | G
               deriving (Eq, Ord, Show)
 
-next :: Player -> Player
-next O = X
+next :: Field -> Field
+next R = G
 next B = B
-next X = O
+next G = R
 
--- Grid utilities
+-- Board utilities
 
-empty :: Grid 
-empty = replicate size (replicate size B)
+empty :: Board 
+empty = replicate size B
 
-full :: Grid -> Bool
-full = all (/= B) . concat
+full :: Board -> Bool
+full = all (/= B)
 
-turn :: Grid -> Player
-turn g = if os <= xs then O else X
+turn :: Board -> Field
+turn g = if os <= xs then R else G
          where
-            os = length (filter (== O) ps)
-            xs = length (filter (== X) ps)
-            ps = concat g
+            os = length (filter (== R) ps)
+            xs = length (filter (== G) ps)
+            ps = g
 
-wins :: Player -> Grid -> Bool
+wins :: Field -> Board -> Bool
 wins p g = any line (rows ++ cols ++ dias)
            where
+              grid = chop 3 g
               line = all (== p)
-              rows = g
-              cols = transpose g
-              dias = [diag g, diag (map reverse g)]
+              rows = grid
+              cols = transpose grid
+              dias = [diag grid, diag (map reverse grid)]
 
-diag :: Grid -> [Player]
+diag :: [Board] -> [Field]
 diag g = [g !! n !! n | n <- [0..size-1]]
 
-won :: Grid -> Bool
-won g = wins O g || wins X g
+won :: Board -> Bool
+won g = wins R g || wins G g
 
--- Displaying a grid
+-- -- Displaying a Board
 
-putGrid :: Grid -> IO ()
-putGrid =
-   putStrLn . unlines . concat . interleave bar . map showRow
-   where bar = [replicate ((size*4)-1) '-']
+-- putBoard :: Board -> IO ()
+-- putBoard =
+--    putStrLn . unlines . concat . interleave bar . map showRow
+--    where bar = [replicate ((size*4)-1) '-']
 
-showRow :: [Player] -> [String]
-showRow = beside . interleave bar . map showPlayer
-          where
-             beside = foldr1 (zipWith (++))
-             bar    = replicate 3 "|"
+-- showRow :: [Field] -> [String]
+-- showRow = beside . interleave bar . map showField
+--           where
+--              beside = foldr1 (zipWith (++))
+--              bar    = replicate 3 "|"
 
-showPlayer :: Player -> [String]
-showPlayer O = ["   ", " O ", "   "]
-showPlayer B = ["   ", "   ", "   "]
-showPlayer X = ["   ", " X ", "   "]
+-- showField :: Field -> [String]
+-- showField R = ["   ", " R ", "   "]
+-- showField B = ["   ", "   ", "   "]
+-- showField G = ["   ", " G ", "   "]
 
-interleave :: a -> [a] -> [a]
-interleave x []     = []
-interleave x [y]    = [y]
-interleave x (y:ys) = y : x : interleave x ys
+-- interleave :: a -> [a] -> [a]
+-- interleave x []     = []
+-- interleave x [y]    = [y]
+-- interleave x (y:ys) = y : x : interleave x ys
 
--- Making a move
+-- -- Making a move
 
-valid :: Grid -> Int -> Bool
-valid g i = 0 <= i && i < size^2 && concat g !! i == B
+valid :: Board -> Int -> Bool
+valid g i = 0 <= i && i < size^2 && g !! i == B
 
-move:: Grid -> Int -> Player -> [Grid]
+move:: Board -> Int -> Field -> [Board]
 move g i p =
-   if valid g i then [chop size (xs ++ [p] ++ ys)] else []
-   where (xs,B:ys) = splitAt i (concat g)
+   if valid g i then [xs ++ [p] ++ ys] else []
+   where (xs,B:ys) = splitAt i g
 
 chop :: Int -> [a] -> [[a]]
 chop n [] = []
 chop n xs = take n xs : chop n (drop n xs)
 
--- Reading a natural number
+-- -- Reading a natural number
 
-getNat :: String -> IO Int
-getNat prompt = do putStr prompt
-                   xs <- getLine
-                   if xs /= [] && all isDigit xs then
-                      return (read xs)
-                   else
-                      do putStrLn "ERROR: Invalid number"
-                         getNat prompt
+-- getNat :: String -> IO Int
+-- getNat prompt = do putStr prompt
+--                    xs <- getLine
+--                    if xs /= [] && all isDigit xs then
+--                       return (read xs)
+--                    else
+--                       do putStrLn "ERROR: Invalid number"
+--                          getNat prompt
 
--- Human vs human
+-- -- Human vs human
 
-tictactoe :: IO ()
-tictactoe = run empty O 
+-- tictactoe :: IO ()
+-- tictactoe = run empty R 
 
-run :: Grid -> Player -> IO ()
-run g p = do cls
-             goto (1,1)
-             putGrid g
-             run' g p
+-- run :: Board -> Field -> IO ()
+-- run g p = do cls
+--              goto (1,1)
+--              putBoard g
+--              run' g p
 
-run' :: Grid -> Player -> IO ()
-run' g p | wins O g  = putStrLn "Player O wins!\n"
-         | wins X g  = putStrLn "Player X wins!\n"
-         | full g    = putStrLn "It's a draw!\n"
-         | otherwise =
-              do i <- getNat (prompt p)
-                 case move g i p of
-                    []   -> do putStrLn "ERROR: Invalid move"
-                               run' g p
-                    [g'] -> run g' (next p)
+-- run' :: Board -> Field -> IO ()
+-- run' g p | wins R g  = putStrLn "Field R wins!\n"
+--          | wins G g  = putStrLn "Field G wins!\n"
+--          | full g    = putStrLn "It's a draw!\n"
+--          | otherwise =
+--               do i <- getNat (prompt p)
+--                  case move g i p of
+--                     []   -> do putStrLn "ERROR: Invalid move"
+--                                run' g p
+--                     [g'] -> run g' (next p)
 
-prompt :: Player -> String
-prompt p = "Player " ++ show p ++ ", enter your move: "
+-- prompt :: Field -> String
+-- prompt p = "Field " ++ show p ++ ", enter your move: "
 
-cls :: IO ()
-cls = putStr "\ESC[2J"
+-- cls :: IO ()
+-- cls = putStr "\ESC[2J"
 
-goto :: (Int,Int) -> IO ()
-goto (x,y) = putStr ("\ESC[" ++ show y ++ ";" ++ show x ++ "H")
+-- goto :: (Int,Int) -> IO ()
+-- goto (x,y) = putStr ("\ESC[" ++ show y ++ ";" ++ show x ++ "H")
 
--- Game trees
+-- -- Game trees
 
 data Tree a = Node a [Tree a]
               deriving Show
 
-gametree :: Grid -> Player -> Tree Grid
+gametree :: Board -> Field -> Tree Board
 gametree g p = Node g [gametree g' (next p) | g' <- moves g p]
 
-moves :: Grid -> Player -> [Grid]
+moves :: Board -> Field -> [Board]
 moves g p | won g     = []
           | full g    = []
           | otherwise = concat [move g i p | i <- [0..((size^2)-1)]]
@@ -148,47 +152,47 @@ prune n (Node x ts) = Node x [prune (n-1) t | t <- ts]
 depth :: Int
 depth = 9
 
--- Minimax
+-- -- Minimax
 
-minimax :: Tree Grid -> Tree (Grid,Player)
+minimax :: Tree Board -> Tree (Board,Field)
 minimax (Node g [])
-   | wins O g  = Node (g,O) []
-   | wins X g  = Node (g,X) []
+   | wins R g  = Node (g,R) []
+   | wins G g  = Node (g,G) []
    | otherwise = Node (g,B) []
 minimax (Node g ts) 
-   | turn g == O = Node (g, minimum ps) ts'
-   | turn g == X = Node (g, maximum ps) ts'
+   | turn g == R = Node (g, minimum ps) ts'
+   | turn g == G = Node (g, maximum ps) ts'
                    where
                       ts' = map minimax ts
                       ps  = [p | Node (_,p) _ <- ts']
 
-bestmove :: Grid -> Player -> Grid
+bestmove :: Board -> Field -> Board
 bestmove g p = head [g' | Node (g',p') _ <- ts, p' == best]
                where 
                   tree = prune depth (gametree g p)
                   Node (_,best) ts = minimax tree
 
--- Human vs computer
+-- -- Human vs computer
 
-main :: IO ()
-main = do hSetBuffering stdout NoBuffering
-          play empty O
+-- main :: IO ()
+-- main = do hSetBuffering stdout NoBuffering
+--           play empty R
 
-play :: Grid -> Player -> IO ()
-play g p = do cls
-              goto (1,1)
-              putGrid g
-              play' g p
+-- play :: Board -> Field -> IO ()
+-- play g p = do cls
+--               goto (1,1)
+--               putBoard g
+--               play' g p
 
-play' :: Grid -> Player -> IO ()
-play' g p
-   | wins O g = putStrLn "Player O wins!\n"
-   | wins X g = putStrLn "Player X wins!\n"
-   | full g   = putStrLn "It's a draw!\n"
-   | p == O   = do i <- getNat (prompt p)
-                   case move g i p of
-                      []   -> do putStrLn "ERROR: Invalid move"
-                                 play' g p
-                      [g'] -> play g' (next p)
-   | p == X   = do putStr "Player X is thinking... "
-                   (play $! (bestmove g p)) (next p)
+-- play' :: Board -> Field -> IO ()
+-- play' g p
+--    | wins R g = putStrLn "Field R wins!\n"
+--    | wins G g = putStrLn "Field G wins!\n"
+--    | full g   = putStrLn "It's a draw!\n"
+--    | p == R   = do i <- getNat (prompt p)
+--                    case move g i p of
+--                       []   -> do putStrLn "ERROR: Invalid move"
+--                                  play' g p
+--                       [g'] -> play g' (next p)
+--    | p == G   = do putStr "Field G is thinking... "
+--                    (play $! (bestmove g p)) (next p)
