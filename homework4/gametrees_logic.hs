@@ -6,6 +6,9 @@
 -- R = O
 -- G = X
 
+-- Red always has an odd number of choices
+-- Green always has a even number of choices
+
 import Data.Char
 import Data.List
 import System.IO
@@ -111,6 +114,9 @@ bestmove g p = head [g' | Node (g',p') _ <- ts, p' == best]
 
 -- Testing
 
+-- Strategy for Red :
+-- Start in 
+
 -- Since Green always starts second, these are the only valid starting boards for Green. 
 startingPositionsForGreen :: [Board]
 startingPositionsForGreen = [ [R,B,B,B,B,B,B,B,B],
@@ -120,7 +126,8 @@ startingPositionsForGreen = [ [R,B,B,B,B,B,B,B,B],
                               [B,B,B,B,R,B,B,B,B],
                               [B,B,B,B,B,R,B,B,B],
                               [B,B,B,B,B,B,R,B,B],
-                              [B,B,B,B,B,B,B,R,B] ] 
+                              [B,B,B,B,B,B,B,R,B],
+                              [B,B,B,B,B,B,B,B,R] ] 
 
 validNextMoves :: Board -> Field-> [Board]
 validNextMoves g p 
